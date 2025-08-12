@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>💎 Diamond Clicker - Le Clicker Ultime</title>
+<style>
+  :root {
+    --bg-light: #f0f0f0;
+    --bg-dark: #111;
+    --text-light: #111;
+    --text-dark: #eee;
+    --cyan: #00ffff;
+    --cyan-dark: #00b3b3;
+  }
+  body {
+    margin: 0; 
+    padding: 60px 0 0 0; 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    transition: background-color 0.4s, color 0.4s;
+  }
+  body.light {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+  }
+  header {
+    height: 60px;
+    width: 100%;
+    background: var(--cyan);
+    color: var(--bg-dark);
+    font-weight: bold;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 20;
+  }
+  #scoreDisplay {
+    position: fixed;
+    top: 60px; 
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--cyan);
+    user-select: none;
+    z-index: 10;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    padding: 15px;
+    gap: 15px;
+    overflow: hidden;
+  }
+  #diamondContainer {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+  #diamond {
+    font-size: 150px;
+    cursor: pointer;
+    user-select: none;
+    color: var(--cyan);
+    filter: drop-shadow(0 0 10px var(--cyan));
+    transition: transform 0.3s ease;
+  }
+  #diamond.pop {
+    animation: popAnim 0.3s forwards;
+  }
+  @keyframes popAnim {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.4) rotate(15deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  #particles {
+    position: absolute;
+    pointer-events: none;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    overflow: visible;
+  }
+  #shop {
+    width: 350px;
+    background-color: rgba(20, 20, 20, 0.8);
+    border-radius: 10px;
+    color: var(--cyan);
+    padding: 10px;
+    overflow-y: auto;
+    box-shadow: 0 0 15px var(--cyan);
+    user-select: none;
+  }
+  #shop h2 {
+    margin-top: 0;
+    text-align: center;
+  }
+  .item {
+    background: rgba(0, 255, 255, 0.1);
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .item button {
+    background: var(--cyan-dark);
+    border: none;
+    padding: 8px 12px;
+    color: var(--bg-dark);
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  .item button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+  .item button:hover:not(:disabled) {
+    background: #00ffffcc;
+  }
+  #controls {
+    margin-top: 15px;
+    text-align: center;
+    color: var(--cyan);
+  }
+  #controls button {
+    margin: 5px;
+    background: var(--cyan-dark);
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--bg-dark);
+    transition: background-color 0.3s ease;
+  }
+  #controls button:hover {
+    background: #00ffffcc;
+  }
+  #modeToggle {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background: var(--cyan-dark);
+    border: none;
+    padding: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    color: var(--bg-dark);
+    user-select: none;
+    box-shadow: 0 0 10px var(--cyan);
+  }
+  #modeToggle:hover {
+    background: #00ffffcc;
+  }
+  audio {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>💎 Diamond Clicker Ultime 💎</header>
+<div id="scoreDisplay">Diamants : 0</div>
+
+<main>
+  <div id="diamondContainer">
+    <div id="particles"></div>
+    <div id="diamond" title="Cliquez-moi">💎</div>
+  </div>
+
+  <aside id="shop">
+    <h2>🛒 Boutique</h2>
+    <div id="itemsList"></div>
+    <div id="controls">
+      <button id="saveBtn" title="Sauvegarder la partie">💾 Sauvegarder</button>
+      <button id="loadBtn" title="Charger une sauvegarde">📂 Charger</button>
+      <input type="file" id="fileInput" style="display:none" accept=".json" />
+      <button id="prestigeBtn" title="Réinitialiser avec bonus">✨ Prestige</button>
+    </div>
+  </aside>
+</main>
+
+<audio id="bgMusic" loop muted>
+  <source src="https://cdn.pixabay.com/download/audio/2021/09/24/audio_4b4f99b032.mp3?filename=chill-vibes-4382.mp3" type="audio/mpeg" />
+  Ton navigateur ne supporte pas la lecture audio.
+</audio>
+
+<button id="modeToggle" title="Changer thème">🌙</button>
+
+<script>
+(() => {
+  const diamond = document.getElementById('diamond');
+  const scoreDisplay = document.getElementById('scoreDisplay');
+  const itemsList = document.getElementById('itemsList');
+  const saveBtn = document.getElementById('saveBtn');
+  const loadBtn = document.getElementById('loadBtn');
+  const fileInput = document.getElementById('fileInput');
+  const prestigeBtn = document.getElementById('prestigeBtn');
+  const bgMusic = document.getElementById('bgMusic');
+  const modeToggle = document.getElementById('modeToggle');
+  const particles = document.getElementById('particles');
+  const body = document.body;
+
+  let score = 0;
+  let diamondsPerSec = 0;
+  let upgrades = [];
+  let prestigeBonus = 1;
+
+  const shopItems = [
+    { id: 1, name: 'Mine', baseCost: 50, baseGain: 1 },
+    { id: 2, name: 'Banque', baseCost: 150, baseGain: 3 },
+    { id: 3, name: 'Foreuse', baseCost: 400, baseGain: 8 },
+    { id: 4, name: 'Usine', baseCost: 1500, baseGain: 25 },
+    { id: 5, name: 'Mine sous-marine', baseCost: 5000, baseGain: 70 },
+    { id: 6, name: 'Laboratoire', baseCost: 12000, baseGain: 160 },
+    { id: 7, name: 'Station spatiale', baseCost: 45000, baseGain: 550 },
+    { id: 8, name: 'Colonie lunaire', baseCost: 150000, baseGain: 1600 },
+    { id: 9, name: 'Planète de diamants', baseCost: 500000, baseGain: 5000 },
+    { id: 10, name: 'Civilisation avancée', baseCost: 2000000, baseGain: 20000 }
+  ];
+
+  shopItems.forEach(item => {
+    upgrades[item.id] = { count: 0, cost: item.baseCost, gain: item.baseGain };
+  });
+
+  function updateScore() {
+    scoreDisplay.textContent = `Diamants : ${formatNumber(score)}`;
+  }
+
+  function formatNumber(num) {
+    if (num >= 1e9) return (num/1e9).toFixed(2) + 'G';
+    if (num >= 1e6) return (num/1e6).toFixed(2) + 'M';
+    if (num >= 1e3) return (num/1e3).toFixed(1) + 'k';
+    return num.toString();
+  }
+
+  function renderShop() {
+    itemsList.innerHTML = '';
+    shopItems.forEach(item => {
+      const upg = upgrades[item.id];
+      const btn = document.createElement('button');
+      btn.textContent = `Acheter (${formatNumber(upg.cost)}💎)`;
+      btn.disabled = score < upg.cost;
+      btn.addEventListener('click', () => buyUpgrade(item.id));
+
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `<div>${item.name} x${upg.count} (+${formatNumber(upg.gain * upg.count)}/sec)</div>`;
+      div.appendChild(btn);
+      itemsList.appendChild(div);
+    });
+  }
+
+  function buyUpgrade(id) {
+    const upg = upgrades[id];
+    if (score >= upg.cost) {
+      score -= upg.cost;
+      upg.count++;
+      diamondsPerSec += upg.gain * prestigeBonus;
+      upg.cost = Math.floor(upg.cost * 1.15);
+      updateScore();
+      renderShop();
+    } else {
+      alert("Pas assez de diamants !");
+    }
+  }
+
+  function addDiamond() {
+    score += 1;  // clic manuel = +1 diamant, sans bonus ni combo
+    updateScore();
+    playClickAnim();
+  }
+
+  function playClickAnim() {
+    diamond.classList.add('pop');
+    createParticles();
+    diamond.style.transform = 'scale(1.4) rotate(15deg)';
+    setTimeout(() => {
+      diamond.classList.remove('pop');
+      diamond.style.transform = 'scale(1) rotate(0deg)';
+    }, 300);
+  }
+
+  function createParticles() {
+    for (let i=0; i<15; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.position = 'absolute';
+      p.style.background = 'cyan';
+      p.style.width = p.style.height = `${Math.random()*6 + 4}px`;
+      p.style.borderRadius = '50%';
+      p.style.top = '50%';
+      p.style.left = '50%';
+      p.style.pointerEvents = 'none';
+      p.style.opacity = 1;
+      const angle = Math.random()*2*Math.PI;
+      const radius = Math.random()*80 + 20;
+      const x = Math.cos(angle)*radius;
+      const y = Math.sin(angle)*radius;
+      p.style.transform = `translate(${x}px, ${y}px)`;
+      p.style.transition = 'opacity 0.6s ease';
+      particles.appendChild(p);
+      setTimeout(() => {
+        p.style.opacity = 0;
+        setTimeout(() => particles.removeChild(p), 600);
+      }, 50);
+    }
+  }
+
+  setInterval(() => {
+    score += diamondsPerSec;
+    updateScore();
+    renderShop();
+  }, 1000);
+
+  setInterval(() => {
+    saveGame();
+  }, 60000);
+
+  function saveGame() {
+    const data = {
+      score,
+      diamondsPerSec,
+      upgrades,
+      prestigeBonus,
+    };
+    localStorage.setItem('diamondClickerSave', JSON.stringify(data));
+  }
+
+  function loadGame() {
+    const data = localStorage.getItem('diamondClickerSave');
+    if (data) {
+      const obj = JSON.parse(data);
+      score = obj.score || 0;
+      diamondsPerSec = obj.diamondsPerSec || 0;
+      upgrades = obj.upgrades || upgrades;
+      prestigeBonus = obj.prestigeBonus || 1;
+      updateScore();
+      renderShop();
+    }
+  }
+
+  saveBtn.addEventListener('click', () => {
+    saveGame();
+    const dataStr = localStorage.getItem('diamondClickerSave');
+    const blob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'diamondClickerSave.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  loadBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const obj = JSON.parse(e.target.result);
+        score = obj.score || 0;
+        diamondsPerSec = obj.diamondsPerSec || 0;
+        upgrades = obj.upgrades || upgrades;
+        prestigeBonus = obj.prestigeBonus || 1;
+        updateScore();
+        renderShop();
+        alert('Sauvegarde chargée !');
+      } catch {
+        alert('Fichier invalide');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  prestigeBtn.addEventListener('click', () => {
+    if (score < 100000) {
+      alert('Tu dois avoir au moins 100 000 diamants pour faire un prestige !');
+      return;
+    }
+    const bonusGain = Math.floor(score / 100000);
+    prestigeBonus += bonusGain;
+    score = 0;
+    diamondsPerSec = 0;
+    upgrades = [];
+    shopItems.forEach(item => {
+      upgrades[item.id] = { count: 0, cost: item.baseCost, gain: item.baseGain };
+    });
+    updateScore();
+    renderShop();
+    alert(`Prestige effectué ! Bonus x${prestigeBonus} sur les gains.`);
+  });
+
+  modeToggle.addEventListener('click', () => {
+    body.classList.toggle('light');
+    if (body.classList.contains('light')) {
+      modeToggle.textContent = '🌙';
+    } else {
+      modeToggle.textContent = '☀️';
+    }
+  });
+
+  diamond.addEventListener('click', addDiamond);
+
+  // Démarre musique au premier clic pour contourner blocage autoplay
+  bgMusic.volume = 0.1;
+  function startMusic() {
+    bgMusic.muted = false;
+    bgMusic.play().catch(() => {
+      console.log("Impossible de lancer la musique automatiquement");
+    });
+    document.body.removeEventListener('click', startMusic);
+  }
+  document.body.addEventListener('click', startMusic, { once: true });
+
+  loadGame();
+  renderShop();
+  updateScore();
+
+})();
+</script>
+
+</body>
+</html>
