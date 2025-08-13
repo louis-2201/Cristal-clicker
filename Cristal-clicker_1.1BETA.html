@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crystal Clicker</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url('https://i.imgur.com/8KpZQyR.jpg') no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    color: #fff;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  body.dark-mode { background: #111; color: #ddd; }
+
+  h1 { margin-top: 20px; }
+  #counter { font-size: 24px; margin: 20px 0; }
+  #diamond { width: 150px; cursor: pointer; transition: transform 0.2s; }
+  #diamond:active { transform: scale(1.1); }
+
+  #shop { display: flex; flex-direction: column; margin-top: 30px; }
+  .item {
+    margin: 5px 0;
+    padding: 10px 15px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 8px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  .item:hover { background: rgba(0,0,0,0.7); }
+
+  .spark {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: gold;
+    border-radius: 50%;
+    animation: sparkAnim 0.5s linear forwards;
+    pointer-events: none;
+  }
+
+  @keyframes sparkAnim {
+    0% { transform: translate(0,0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--x), var(--y)) scale(0); opacity: 0; }
+  }
+
+  #optionsBtn {
+    position: fixed; top: 10px; right: 10px; padding: 8px 12px;
+    background: rgba(0,0,0,0.5); border-radius: 5px; cursor: pointer; z-index: 1000;
+  }
+
+  #optionsPanel {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    justify-content: center; align-items: center; z-index: 999;
+  }
+
+  #optionsContent {
+    background: #222; padding: 20px; border-radius: 10px;
+    color: #fff; min-width: 250px;
+  }
+
+  .option-item { margin: 10px 0; }
+  button { padding: 5px 10px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<h1>Crystal Clicker</h1>
+<div id="counter">0 Crystals</div>
+<img id="diamond" src="https://i.imgur.com/3Z9j2uQ.png" alt="Diamond">
+
+<div id="shop">
+  <div class="item" onclick="buyItem('mine', 100)">Mine (100 Crystals)</div>
+  <div class="item" onclick="buyItem('bank', 500)">Bank (500 Crystals)</div>
+</div>
+
+<div id="optionsBtn" onclick="toggleOptions()">Options ⚙️</div>
+<div id="optionsPanel">
+  <div id="optionsContent">
+    <h3>Options</h3>
+    <div class="option-item"><label>Musique :</label><button onclick="toggleMusic()">On/Off</button></div>
+    <div class="option-item"><label>Animations :</label><button onclick="toggleAnimations()">On/Off</button></div>
+    <div class="option-item"><label>Mode sombre :</label><button onclick="toggleDarkMode()">Toggle</button></div>
+    <div class="option-item">
+      <label>Sauvegarde :</label>
+      <button onclick="exportSave()">Télécharger</button>
+      <input type="file" id="importFile" onchange="importSave(event)">
+    </div>
+    <div class="option-item"><button onclick="toggleOptions()">Fermer</button></div>
+  </div>
+</div>
+
+<audio id="bgMusic" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop autoplay volume="0.1"></audio>
+
+<script>
+let crystals = 0;
+let bonus = 0;
+let animationsOn = true;
+let musicOn = true;
+
+const counter = document.getElementById('counter');
+const diamond = document.getElementById('diamond');
+const bgMusic = document.getElementById('bgMusic');
+
+diamond.addEventListener('click', () => {
+  let gain = 1 + bonus;
+  crystals += gain;
+  updateCounter();
+  checkRenaissance();
+});
+
+function updateCounter() { counter.innerText = `${crystals} Crystals`; }
+
+function buyItem(item, cost) {
+  if (crystals >= cost) {
+    crystals -= cost;
+    updateCounter();
+    if (animationsOn) createSpark(event.target);
+  } else { alert('Pas assez de Crystals'); }
+}
+
+function createSpark(element) {
+  for(let i=0;i<5;i++){
+    const spark = document.createElement('div');
+    spark.className='spark';
+    const x = (Math.random()*100 -50)+'px';
+    const y = (Math.random()*-100)+'px';
+    spark.style.setProperty('--x', x);
+    spark.style.setProperty('--y', y);
+    element.appendChild(spark);
+    setTimeout(()=>spark.remove(), 500);
+  }
+}
+
+function checkRenaissance() {
+  if(crystals >= 1_000_000_000) {
+    crystals = 0;
+    bonus += 0.1;
+    updateCounter();
+    alert('Renaissance ! Bonus +10% permanent 💎');
+  }
+}
+
+function toggleOptions() {
+  const panel = document.getElementById('optionsPanel');
+  panel.style.display = panel.style.display==='flex'?'none':'flex';
+}
+
+function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+function toggleAnimations() { animationsOn = !animationsOn; }
+function toggleMusic() { 
+  musicOn = !musicOn;
+  if(musicOn) bgMusic.play(); else bgMusic.pause();
+}
+
+function saveGame() { localStorage.setItem('crystals', JSON.stringify({crystals, bonus})); }
+function loadGame() {
+  const data = JSON.parse(localStorage.getItem('crystals'));
+  if(data){ crystals=data.crystals||0; bonus=data.bonus||0; updateCounter(); }
+}
+
+function exportSave() {
+  const dataStr="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify({crystals,bonus}));
+  const dl=document.createElement('a');
+  dl.setAttribute("href", dataStr);
+  dl.setAttribute("download","crystal_clicker_save.json");
+  dl.click();
+}
+
+function importSave(event){
+  const file=event.target.files[0];
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const data=JSON.parse(e.target.result);
+    crystals=data.crystals||0;
+    bonus=data.bonus||0;
+    updateCounter();
+  };
+  reader.readAsText(file);
+}
+
+setInterval(saveGame,60000);
+loadGame();
+</script>
+
+</body>
+</html>
